@@ -1,33 +1,47 @@
-name: Backend CI (Windows)
+name: Backend Node.js CI
 
 on:
   push:
-    branches: [backend, develop]
+    branches: [backend, develop, main]
   pull_request:
-    branches: [develop, main]
+    branches: [backend, develop, main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: backend-node-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  ci:
-    runs-on: windows-latest
+  build:
+    name: Node.js ${{ matrix.node-version }}
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version: [22.x, 24.x]
 
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v5
 
-      - name: Setup Node
+      - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
-          node-version: 20
+          node-version: ${{ matrix.node-version }}
           cache: npm
+          cache-dependency-path: package-lock.json
 
       - name: Install dependencies
         run: npm ci
 
-      - name: Lint
+      - name: Run lint
         run: npm run lint --if-present
 
-      - name: Test
+      - name: Run tests
         run: npm test --if-present
 
-      - name: Build
+      - name: Build backend
         run: npm run build --if-present
