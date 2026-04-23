@@ -1,0 +1,24 @@
+services:
+  backend:
+    build:
+      context: ./backend
+    container_name: rideandpark-backend
+    environment:
+      PORT: 3000
+      CORS_ORIGIN: http://localhost:8080
+      PARKING_API_URL: https://api.mobidata-bw.de/park-api/api/public/v3/parking-sites
+      PARKING_API_TIMEOUT_MS: 20000
+      ALLOW_FALLBACK_DATA: "true"
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: .
+    container_name: rideandpark-frontend
+    depends_on:
+      - backend
+    ports:
+      - "8080:80"
+    restart: unless-stopped
