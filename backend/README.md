@@ -31,3 +31,7 @@ npm run dev
 
 - `name`: Filter nach Name, z. B. `?name=Stuttgart`
 - `source_uid`: Filter nach Datenquelle, z. B. `?source_uid=pbw`
+- `target_lat` und `target_lng`: Zielkoordinaten fuer eine Umkreissuche
+- `radius_km`: Suchradius in Kilometern, z. B. `?target_lat=48.1374&target_lng=11.5755&radius_km=5`
+
+Wenn `target_lat` und `target_lng` gesetzt sind, filtert das Backend die Parkplaetze serverseitig auf den angegebenen Radius. Wird `radius_km` nicht gesetzt, verwendet das Backend standardmaessig `5 km`.

@@ -1,4 +1,4 @@
-name: Backend Node.js CI
+name: Backend CI
 
 on:
   push:
@@ -14,9 +14,9 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  lint:
-    name: Lint
-    runs-on: windows-latest
+  backend-ci:
+    name: Backend CI
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
@@ -25,15 +25,28 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
-          node-version: 24.x
+          node-version: 22.x
           cache: npm
-          cache-dependency-path: package-lock.json
+          cache-dependency-path: |
+            package-lock.json
+            backend/package-lock.json
 
-      - name: Install dependencies
+      - name: Install frontend dependencies
         run: npm ci
 
-      - name: Test
+      - name: Run frontend lint
+        run: npm run lint
+
+      - name: Run frontend tests
         run: npm test --if-present
 
-      - name: Build backend
+      - name: Build frontend
         run: npm run build --if-present
+
+      - name: Install backend dependencies
+        run: npm ci
+        working-directory: backend
+
+      - name: Validate backend entrypoint syntax
+        run: node --check src/server.js
+        working-directory: backend
