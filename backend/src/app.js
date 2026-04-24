@@ -21,7 +21,7 @@ app.use((req, res) => {
   });
 });
 
-app.use((error, req, res, next) => {
+app.use((error, req, res, _next) => {
   const statusCode = error.statusCode || 500;
 
   res.status(statusCode).json({
