@@ -2,8 +2,8 @@ services:
   backend:
     build:
       context: ./backend
-    container_name: rideandpark-backend
     environment:
+      NODE_ENV: production
       PORT: 3000
       CORS_ORIGIN: http://localhost:8080
       PARKING_API_URL: https://api.mobidata-bw.de/park-api/api/public/v3/parking-sites
@@ -11,14 +11,32 @@ services:
       ALLOW_FALLBACK_DATA: "true"
     ports:
       - "3000:3000"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3000/api/health').then((response) => process.exit(response.ok ? 0 : 1)).catch(() => process.exit(1))"
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
     restart: unless-stopped
 
   frontend:
     build:
       context: .
-    container_name: rideandpark-frontend
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     ports:
       - "8080:80"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1/ || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
     restart: unless-stopped
