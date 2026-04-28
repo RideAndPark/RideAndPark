@@ -8,6 +8,7 @@ class ParkingModel {
     total = null,
     occupancyRate = null,
     status = "unknown",
+    realtimeData = false,
     source = "unknown",
     updatedAt
   }) {
@@ -19,6 +20,7 @@ class ParkingModel {
     this.total = total;
     this.occupancyRate = occupancyRate;
     this.status = status;
+    this.realtimeData = realtimeData;
     this.source = source;
     this.updatedAt = updatedAt;
   }

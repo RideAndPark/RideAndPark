@@ -10,9 +10,17 @@ let cache = {
 };
 
 const DEFAULT_RADIUS_KM = 5;
+const DEFAULT_CACHE_TTL_MS = 30000;
 
 function isFallbackAllowed() {
   return String(process.env.ALLOW_FALLBACK_DATA ?? "true").toLowerCase() === "true";
+}
+
+function getCacheTtlMs() {
+  const configuredTtl = Number(process.env.PARKING_CACHE_TTL_MS);
+  return Number.isFinite(configuredTtl) && configuredTtl >= 0
+    ? configuredTtl
+    : DEFAULT_CACHE_TTL_MS;
 }
 
 function buildMeta() {
@@ -30,7 +38,8 @@ function getCacheKey(filters = {}) {
     source_uid: filters.source_uid ?? null,
     target_lat: filters.target_lat ?? null,
     target_lng: filters.target_lng ?? null,
-    radius_km: filters.radius_km ?? null
+    radius_km: filters.radius_km ?? null,
+    realtimeData: filters.realtimeData ?? null
   });
 }
 
@@ -38,10 +47,19 @@ function hasActiveFilters(filters = {}) {
   return Boolean(
     filters.name ||
       filters.source_uid ||
+      filters.realtimeData !== undefined ||
       filters.target_lat !== undefined ||
       filters.target_lng !== undefined ||
       filters.radius_km !== undefined
   );
+}
+
+function isCacheFresh() {
+  if (!cache.loadedAt) {
+    return false;
+  }
+
+  return Date.now() - new Date(cache.loadedAt).getTime() < getCacheTtlMs();
 }
 
 function toRadians(value) {
@@ -83,8 +101,16 @@ function applyRadiusFilter(parkings, filters = {}) {
   });
 }
 
+function applyRealtimeFilter(parkings, filters = {}) {
+  if (filters.realtimeData !== true) {
+    return parkings;
+  }
+
+  return parkings.filter((parking) => parking.realtimeData === true);
+}
+
 function buildFilteredResult(data, filters, source, warning = null) {
-  const filteredData = applyRadiusFilter(data, filters);
+  const filteredData = applyRadiusFilter(applyRealtimeFilter(data, filters), filters);
 
   return {
     data: filteredData,
@@ -112,7 +138,12 @@ function buildFallbackResult(filters, warning) {
 async function loadParkings({ forceRefresh = false, filters = {} } = {}) {
   const cacheKey = getCacheKey(filters);
 
-  if (!forceRefresh && !hasActiveFilters(filters) && cache.parkings.length > 0) {
+  if (
+    !forceRefresh &&
+    !hasActiveFilters(filters) &&
+    cache.parkings.length > 0 &&
+    isCacheFresh()
+  ) {
     return {
       data: cache.parkings,
       meta: buildMeta()
