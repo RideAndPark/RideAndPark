@@ -284,6 +284,11 @@ function transformItem(item, fallbackSource = "external") {
     occupancyRate = Number((((total - free) / total) * 100).toFixed(2));
   }
 
+  // Safeguard: Wenn occupancyRate 0 ist aber Free > 0, neu berechnen
+  if ((occupancyRate === 0 || occupancyRate === null) && total !== null && total > 0 && free !== null && free > 0) {
+    occupancyRate = Number((((total - free) / total) * 100).toFixed(2));
+  }
+
   if (!id || !name || lat === null || lng === null) {
     return null;
   }

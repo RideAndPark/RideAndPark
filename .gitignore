@@ -26,3 +26,5 @@ backend/.env
 *.njsproj
 *.sln
 *.sw?
+
+.github

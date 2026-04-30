@@ -3,6 +3,7 @@ import {
   Circle,
   CircleMarker,
   MapContainer,
+  Polyline,
   Popup,
   TileLayer,
   Tooltip,
@@ -99,6 +100,18 @@ function getMarkerRadius(parking) {
   return 9
 }
 
+function getParkingMetrics(parking) {
+  const free = parking.realtime_free_capacity ?? parking.free ?? 0
+  const total = parking.capacity ?? parking.total ?? 0
+  const occupancy = parking.occupancyRate ?? 0
+
+  return {
+    freeLabel: `${formatNumber(free)} frei`,
+    totalLabel: `${formatNumber(total)} insgesamt`,
+    occupancyLabel: `${occupancy.toFixed(1)}% Auslastung`,
+  }
+}
+
 function calculateDistanceKm(fromLat, fromLng, toLat, toLng) {
   const toRadians = (value) => (value * Math.PI) / 180
   const earthRadiusKm = 6371
@@ -113,17 +126,82 @@ function calculateDistanceKm(fromLat, fromLng, toLat, toLng) {
   return earthRadiusKm * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
 }
 
-function getParkingMetrics(parking) {
-  const free = parking.free ?? null
-  const total = parking.total ?? null
-  const occupancyRate = parking.occupancyRate ?? null
-
-  return {
-    freeLabel: free === null ? 'k. A.' : `${formatNumber(free)} frei`,
-    totalLabel: total === null ? 'Kapazität unbekannt' : `${formatNumber(total)} Plätze`,
-    occupancyLabel:
-      occupancyRate === null ? 'Auslastung unbekannt' : `${occupancyRate.toFixed(1)} % belegt`,
+async function getRouteCoordinates(fromLat, fromLng, toLat, toLng) {
+  try {
+    const response = await fetch(
+      `https://router.project-osrm.org/route/v1/driving/${fromLng},${fromLat};${toLng},${toLat}?overview=full&geometries=geojson`
+    )
+    
+    if (!response.ok) {
+      throw new Error('Routing failed')
+    }
+    
+    const data = await response.json()
+    
+    if (data.routes && data.routes.length > 0) {
+      const coordinates = data.routes[0].geometry.coordinates
+      return coordinates.map(([lng, lat]) => [lat, lng])
+    }
+    
+    return null
+  } catch (error) {
+    console.warn('Route lookup failed, using straight line:', error)
+    return null
   }
+}
+
+function RouteLines({ userLocation, selectedParking, target }) {
+  const [userToParkingRoute, setUserToParkingRoute] = useState(null)
+  const [parkingToTargetRoute, setParkingToTargetRoute] = useState(null)
+
+  useEffect(() => {
+    async function loadRoutes() {
+      setUserToParkingRoute(null)
+      setParkingToTargetRoute(null)
+
+      // Route: Benutzer → Parkhaus
+      if (userLocation && selectedParking) {
+        const route = await getRouteCoordinates(
+          userLocation.lat,
+          userLocation.lng,
+          selectedParking.lat,
+          selectedParking.lng
+        )
+        setUserToParkingRoute(route || [[userLocation.lat, userLocation.lng], [selectedParking.lat, selectedParking.lng]])
+      }
+
+      // Route: Parkhaus → Ziel
+      if (target && selectedParking) {
+        const route = await getRouteCoordinates(
+          selectedParking.lat,
+          selectedParking.lng,
+          target.lat,
+          target.lng
+        )
+        setParkingToTargetRoute(route || [[selectedParking.lat, selectedParking.lng], [target.lat, target.lng]])
+      }
+    }
+
+    loadRoutes()
+  }, [userLocation, selectedParking, target])
+
+  return (
+    <>
+      {userToParkingRoute ? (
+        <Polyline
+          positions={userToParkingRoute}
+          pathOptions={{ color: '#0066cc', weight: 3, opacity: 0.8 }}
+        />
+      ) : null}
+
+      {parkingToTargetRoute ? (
+        <Polyline
+          positions={parkingToTargetRoute}
+          pathOptions={{ color: '#ff8c00', weight: 3, opacity: 0.8 }}
+        />
+      ) : null}
+    </>
+  )
 }
 
 function FitMapToData({ parkings, target, radiusKm }) {
@@ -158,7 +236,7 @@ function FitMapToData({ parkings, target, radiusKm }) {
   return null
 }
 
-function ParkingMap({ parkings, target, radiusKm, selectedParking, onSelectParking }) {
+function ParkingMap({ parkings, target, radiusKm, selectedParking, onSelectParking, userLocation }) {
   return (
     <MapContainer center={DEFAULT_CENTER} zoom={12} className="map-canvas" scrollWheelZoom>
       <TileLayer
@@ -167,6 +245,22 @@ function ParkingMap({ parkings, target, radiusKm, selectedParking, onSelectParki
       />
 
       <FitMapToData parkings={parkings} target={target} radiusKm={radiusKm} />
+
+      {/* Echte Straßen-Routes */}
+      <RouteLines userLocation={userLocation} selectedParking={selectedParking} target={target} />
+
+      {/* Benutzer-Position */}
+      {userLocation ? (
+        <CircleMarker
+          center={[userLocation.lat, userLocation.lng]}
+          radius={6}
+          pathOptions={{ color: '#0066cc', fillColor: '#0066cc', fillOpacity: 1, weight: 2 }}
+        >
+          <Tooltip direction="top" offset={[0, -6]} opacity={1} permanent>
+            Dein Standort
+          </Tooltip>
+        </CircleMarker>
+      ) : null}
 
       {target ? (
         <>
@@ -230,6 +324,7 @@ function App() {
   const [selectedParkingId, setSelectedParkingId] = useState(null)
   const [targetQuery, setTargetQuery] = useState('München Hauptbahnhof')
   const [target, setTarget] = useState(null)
+  const [userLocation, setUserLocation] = useState(null)
   const [radiusKm, setRadiusKm] = useState(DEFAULT_RADIUS_KM)
   const [refreshSeconds, setRefreshSeconds] = useState(DEFAULT_REFRESH_SECONDS)
   const [realtimeOnly, setRealtimeOnly] = useState(true)
@@ -380,6 +475,22 @@ function App() {
       isActive = false
     }
   }, [applyParkingResult, fetchParkings])
+
+  useEffect(() => {
+    if ('geolocation' in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setUserLocation({
+            lat: position.coords.latitude,
+            lng: position.coords.longitude,
+          })
+        },
+        (error) => {
+          console.warn('Geolocation error:', error.message)
+        }
+      )
+    }
+  }, [])
 
   useEffect(() => {
     const interval = window.setInterval(() => {
@@ -575,6 +686,7 @@ function App() {
               radiusKm={radiusKm}
               selectedParking={selectedParking}
               onSelectParking={(parking) => setSelectedParkingId(parking.id)}
+              userLocation={userLocation}
             />
           </div>
           {loading ? <div className="map-overlay">Lade aktuelle Parkdaten...</div> : null}
@@ -601,40 +713,58 @@ function App() {
                 />
               </div>
 
-              <dl className="detail-list">
-                <div>
-                  <dt>Freie Plätze</dt>
-                  <dd>{formatNumber(selectedParking.free)}</dd>
+              <div className="parking-stats">
+                <div className="stat-group">
+                  <div className="stat-row">
+                    <div className="stat-item">
+                      <span className="stat-label">Freie Plätze</span>
+                      <span className="stat-value">{formatNumber(selectedParking.free)}</span>
+                    </div>
+                    <div className="stat-item">
+                      <span className="stat-label">Kapazität</span>
+                      <span className="stat-value">{formatNumber(selectedParking.total)}</span>
+                    </div>
+                  </div>
+
+                  <div className="occupancy-section">
+                    <div className="occupancy-header">
+                      <span className="occupancy-label">Auslastung</span>
+                      <span className="occupancy-percentage">
+                        {selectedParking.occupancyRate !== null
+                          ? `${selectedParking.occupancyRate.toFixed(1)} %`
+                          : 'k. A.'}
+                      </span>
+                    </div>
+                    <div className="progress-bar">
+                      <div 
+                        className={`progress-fill status-${selectedParking.status}`}
+                        style={{ 
+                          width: `${Math.min(selectedParking.occupancyRate ?? 0, 100)}%` 
+                        }}
+                      />
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <dt>Kapazität</dt>
-                  <dd>{formatNumber(selectedParking.total)}</dd>
+
+                <div className="metadata-section">
+                  <div className="metadata-item">
+                    <span className="metadata-label">Letzte Meldung</span>
+                    <span className="metadata-value">{formatDate(selectedParking.updatedAt)}</span>
+                  </div>
+                  <div className="metadata-item">
+                    <span className="metadata-label">Quelle</span>
+                    <span className="metadata-value">{selectedParking.source}</span>
+                  </div>
+                  <div className="metadata-item">
+                    <span className="metadata-label">Entfernung</span>
+                    <span className="metadata-value">
+                      {selectedParking.distanceKm !== null
+                        ? `${selectedParking.distanceKm.toFixed(1)} km`
+                        : 'kein Ziel gesetzt'}
+                    </span>
+                  </div>
                 </div>
-                <div>
-                  <dt>Auslastung</dt>
-                  <dd>
-                    {selectedParking.occupancyRate !== null
-                      ? `${selectedParking.occupancyRate.toFixed(1)} %`
-                      : 'k. A.'}
-                  </dd>
-                </div>
-                <div>
-                  <dt>Letzte Meldung</dt>
-                  <dd>{formatDate(selectedParking.updatedAt)}</dd>
-                </div>
-                <div>
-                  <dt>Quelle</dt>
-                  <dd>{selectedParking.source}</dd>
-                </div>
-                <div>
-                  <dt>Entfernung</dt>
-                  <dd>
-                    {selectedParking.distanceKm !== null
-                      ? `${selectedParking.distanceKm.toFixed(1)} km`
-                      : 'kein Ziel gesetzt'}
-                  </dd>
-                </div>
-              </dl>
+              </div>
             </article>
           ) : (
             <article className="detail-card muted-card">
