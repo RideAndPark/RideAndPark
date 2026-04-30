@@ -1,19 +1,43 @@
-# React + Vite
+# RideAndPark
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+RideAndPark besteht aus einem React/Vite-Frontend und einem Express-Backend fuer Live-Parkdaten.
 
-Currently, two official plugins are available:
+## Lokal starten
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+Frontend:
 
-## React Compiler
+```bash
+npm install
+npm run dev
+```
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+Backend:
 
-## Expanding the ESLint configuration
+```bash
+cd backend
+npm install
+npm run dev
+```
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+Das Frontend laeuft lokal ueber Vite, und `/api` wird in [vite.config.js](/E:/RideAndPark/vite.config.js) auf das Backend unter `http://localhost:3000` weitergeleitet.
+
+## Docker
+
+Das Repo enthaelt jetzt ein komplettes Docker-Setup fuer Frontend und Backend.
+
+Start:
+
+```bash
+docker compose up --build
+```
+
+Danach:
+
+- Frontend: `http://localhost:8080`
+- Backend: `http://localhost:3000`
+- Healthcheck: `http://localhost:3000/api/health`
+
+Das Frontend wird per Nginx ausgeliefert und leitet `/api` intern an den Backend-Container weiter. Dadurch funktionieren Browser-Requests auf `/api/parkings` auch im Docker-Setup ohne weitere Frontend-Anpassung.
 
 
 
