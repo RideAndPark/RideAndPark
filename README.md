@@ -39,6 +39,3 @@ Danach:
 
 Das Frontend wird per Nginx ausgeliefert und leitet `/api` intern an den Backend-Container weiter. Dadurch funktionieren Browser-Requests auf `/api/parkings` auch im Docker-Setup ohne weitere Frontend-Anpassung.
 
-
-
-Test
