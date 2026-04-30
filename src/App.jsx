@@ -458,7 +458,7 @@ function App() {
                 <input
                   type="range"
                   min="1"
-                  max="25"
+                  max="25" // hier anpassen. zu viel! Keiner läuft so weit
                   step="1"
                   value={radiusKm}
                   onChange={(event) => {

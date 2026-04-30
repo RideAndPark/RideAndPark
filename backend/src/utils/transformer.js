@@ -123,6 +123,7 @@ function hasRealtimeData(item, fallbackSource, free, total, occupancyRate, norma
   }
 
   const realtimeFlag = deepPick(item, [
+    "has_realtime_data",
     "realtimeData",
     "realTimeData",
     "hasRealtimeData",
@@ -213,6 +214,7 @@ function transformItem(item, fallbackSource = "external") {
   );
   let free = asNumber(
     deepPick(item, [
+      "realtime_free_capacity",
       "free",
       "free_slots",
       "available",
