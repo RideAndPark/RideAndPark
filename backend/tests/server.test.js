@@ -15,8 +15,8 @@ function restoreEnv() {
 }
 
 function loadServerWithAppMock(appMock) {
-  const appPath = require.resolve("./app");
-  const serverPath = require.resolve("./server");
+  const appPath = require.resolve("../src/app");
+  const serverPath = require.resolve("../src/server");
 
   delete require.cache[appPath];
   delete require.cache[serverPath];
@@ -28,7 +28,7 @@ function loadServerWithAppMock(appMock) {
     exports: appMock
   };
 
-  require("./server");
+  require("../src/server");
 }
 
 test.afterEach(() => {
