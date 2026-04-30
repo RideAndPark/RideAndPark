@@ -8,6 +8,7 @@ import {
   Tooltip,
   useMap,
 } from 'react-leaflet'
+import { PieChart, Pie, Cell, Legend, Tooltip as RechartsTooltip, ResponsiveContainer } from 'recharts'
 import './App.css'
 
 const DEFAULT_CENTER = [48.1372, 11.5756]
@@ -413,22 +414,47 @@ function App() {
         </div>
 
         <div className="status-strip">
-          <div className="status-card status-open">
-            <span className="status-label">Frei</span>
-            <strong>{statusCounts.open}</strong>
-          </div>
-          <div className="status-card status-limited">
-            <span className="status-label">Knapp</span>
-            <strong>{statusCounts.limited}</strong>
-          </div>
-          <div className="status-card status-full">
-            <span className="status-label">Voll</span>
-            <strong>{statusCounts.full}</strong>
-          </div>
-          <div className="status-card status-unknown">
-            <span className="status-label">Unklar</span>
-            <strong>{statusCounts.unknown}</strong>
-          </div>
+          <ResponsiveContainer width="100%" height={240}>
+            <PieChart>
+              <Pie
+                data={[
+                  { name: 'Frei', value: statusCounts.open, fill: '#10b981' },
+                  { name: 'Knapp', value: statusCounts.limited, fill: '#f59e0b' },
+                  { name: 'Voll', value: statusCounts.full, fill: '#ef4444' },
+                  { name: 'Unklar', value: statusCounts.unknown, fill: '#6b7280' },
+                ]}
+                cx="50%"
+                cy="50%"
+                innerRadius={45}
+                outerRadius={75}
+                paddingAngle={2}
+                dataKey="value"
+              >
+                <Cell fill="#10b981" />
+                <Cell fill="#f59e0b" />
+                <Cell fill="#ef4444" />
+                <Cell fill="#6b7280" />
+              </Pie>
+              <RechartsTooltip 
+                formatter={(value) => `${value} Parkhaus`}
+                contentStyle={{
+                  backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                  border: '1px solid rgba(0, 0, 0, 0.08)',
+                  borderRadius: '8px',
+                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)'
+                }}
+              />
+              <Legend 
+                verticalAlign="bottom" 
+                height={36}
+                formatter={(value, entry) => (
+                  <span style={{ color: '#374151', fontSize: '0.85rem', fontWeight: '600' }}>
+                    {entry.payload.name}: {entry.payload.value}
+                  </span>
+                )}
+              />
+            </PieChart>
+          </ResponsiveContainer>
         </div>
       </header>
 

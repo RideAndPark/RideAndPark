@@ -99,71 +99,19 @@ body {
 }
 
 .status-strip {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 18px;
-  padding: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
   background: white;
   border: 1px solid rgba(0, 0, 0, 0.08);
   border-radius: 20px;
   box-shadow: var(--shadow-lg);
+  min-height: 320px;
 }
 
-.status-card {
-  border-radius: 16px;
-  padding: 20px;
-  min-height: 110px;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  color: white;
-  font-weight: 600;
-  transition: all 0.3s ease;
-  position: relative;
-  overflow: hidden;
-}
-
-.status-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0) 100%);
-  pointer-events: none;
-}
-
-.status-card strong {
-  font-size: 2.5rem;
-  font-weight: 800;
-  z-index: 1;
-}
-
-.status-label {
-  display: block;
-  font-size: 0.8rem;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  opacity: 0.95;
-  z-index: 1;
-}
-
-.status-open {
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-}
-
-.status-limited {
-  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-}
-
-.status-full {
-  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-}
-
-.status-unknown {
-  background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
+.status-strip svg {
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.05));
 }
 
 .workspace {
