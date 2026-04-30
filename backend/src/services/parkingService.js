@@ -8,6 +8,7 @@ let cache = {
   loadedAt: null,
   warning: null
 };
+let pendingLoad = null;
 
 const DEFAULT_RADIUS_KM = 5;
 const DEFAULT_CACHE_TTL_MS = 30000;
@@ -101,6 +102,34 @@ function applyRadiusFilter(parkings, filters = {}) {
   });
 }
 
+function applyNameFilter(parkings, filters = {}) {
+  if (!filters.name) {
+    return parkings;
+  }
+
+  const normalizedName = String(filters.name).trim().toLowerCase();
+
+  if (!normalizedName) {
+    return parkings;
+  }
+
+  return parkings.filter((parking) => parking.name.toLowerCase().includes(normalizedName));
+}
+
+function applySourceFilter(parkings, filters = {}) {
+  if (!filters.source_uid) {
+    return parkings;
+  }
+
+  const normalizedSource = String(filters.source_uid).trim().toLowerCase();
+
+  if (!normalizedSource) {
+    return parkings;
+  }
+
+  return parkings.filter((parking) => parking.source.toLowerCase() === normalizedSource);
+}
+
 function applyRealtimeFilter(parkings, filters = {}) {
   if (filters.realtimeData !== true) {
     return parkings;
@@ -110,7 +139,10 @@ function applyRealtimeFilter(parkings, filters = {}) {
 }
 
 function buildFilteredResult(data, filters, source, warning = null) {
-  const filteredData = applyRadiusFilter(applyRealtimeFilter(data, filters), filters);
+  const filteredData = applyRadiusFilter(
+    applyRealtimeFilter(applySourceFilter(applyNameFilter(data, filters), filters), filters),
+    filters
+  );
 
   return {
     data: filteredData,
@@ -130,46 +162,37 @@ function buildFilteredResult(data, filters, source, warning = null) {
   };
 }
 
+function storeCache(parkings, source, loadedAt, warning = null) {
+  cache = {
+    parkings,
+    source,
+    loadedAt,
+    warning
+  };
+}
+
 function buildFallbackResult(filters, warning) {
   const fallbackData = transform(getSeedParkings(), "seed");
   return buildFilteredResult(fallbackData, filters, "seed", warning);
 }
 
-async function loadParkings({ forceRefresh = false, filters = {} } = {}) {
-  const cacheKey = getCacheKey(filters);
-
-  if (
-    !forceRefresh &&
-    !hasActiveFilters(filters) &&
-    cache.parkings.length > 0 &&
-    isCacheFresh()
-  ) {
-    return {
-      data: cache.parkings,
-      meta: buildMeta()
-    };
-  }
-
+async function fetchAndCacheParkings() {
   try {
-    const rawData = await apiService.fetchParkingData(filters);
+    const rawData = await apiService.fetchParkingData();
 
     if (rawData) {
       const transformed = transform(rawData, "external");
 
       if (transformed.length > 0) {
-        const result = buildFilteredResult(transformed, filters, "external");
+        const loadedAt = new Date().toISOString();
+        storeCache(transformed, "external", loadedAt);
 
-        if (!hasActiveFilters(filters)) {
-          cache = {
-            parkings: transformed,
-            source: "external",
-            loadedAt: result.meta.loadedAt,
-            key: cacheKey,
-            warning: null
-          };
-        }
-
-        return result;
+        return {
+          data: transformed,
+          source: "external",
+          loadedAt,
+          warning: null
+        };
       }
     }
   } catch (error) {
@@ -177,41 +200,75 @@ async function loadParkings({ forceRefresh = false, filters = {} } = {}) {
       throw error;
     }
 
-    const result = buildFallbackResult(filters, `External source unavailable: ${error.message}`);
+    const fallbackData = transform(getSeedParkings(), "seed");
+    const loadedAt = new Date().toISOString();
+    const warning = `External source unavailable: ${error.message}`;
+    storeCache(fallbackData, "seed", loadedAt, warning);
 
-    if (!hasActiveFilters(filters)) {
-      cache = {
-        parkings: result.data,
-        source: "seed",
-        loadedAt: result.meta.loadedAt,
-        key: cacheKey,
-        warning: result.meta.warning
-      };
-    }
-
-    return result;
+    return {
+      data: fallbackData,
+      source: "seed",
+      loadedAt,
+      warning
+    };
   }
 
   if (!isFallbackAllowed()) {
     throw new Error("No external parking data available and fallback is disabled.");
   }
 
-  const result = buildFallbackResult(
-    filters,
-    "External source returned no usable parking records."
-  );
+  const fallbackData = transform(getSeedParkings(), "seed");
+  const loadedAt = new Date().toISOString();
+  const warning = "External source returned no usable parking records.";
+  storeCache(fallbackData, "seed", loadedAt, warning);
 
-  if (!hasActiveFilters(filters)) {
-    cache = {
-      parkings: result.data,
-      source: "seed",
-      loadedAt: result.meta.loadedAt,
-      key: cacheKey,
-      warning: result.meta.warning
+  return {
+    data: fallbackData,
+    source: "seed",
+    loadedAt,
+    warning
+  };
+}
+
+async function getBaseParkings(forceRefresh = false) {
+  if (!forceRefresh && cache.parkings.length > 0 && isCacheFresh()) {
+    return {
+      data: cache.parkings,
+      source: cache.source,
+      loadedAt: cache.loadedAt,
+      warning: cache.warning
     };
   }
 
-  return result;
+  if (!forceRefresh && pendingLoad) {
+    return pendingLoad;
+  }
+
+  pendingLoad = fetchAndCacheParkings();
+
+  try {
+    return await pendingLoad;
+  } finally {
+    pendingLoad = null;
+  }
+}
+
+async function loadParkings({ forceRefresh = false, filters = {} } = {}) {
+  const baseResult = await getBaseParkings(forceRefresh);
+
+  if (!hasActiveFilters(filters)) {
+    return {
+      data: baseResult.data,
+      meta: buildMeta()
+    };
+  }
+
+  return buildFilteredResult(
+    baseResult.data,
+    filters,
+    baseResult.source,
+    baseResult.warning
+  );
 }
 
 async function getProcessedParkings(filters = {}) {
