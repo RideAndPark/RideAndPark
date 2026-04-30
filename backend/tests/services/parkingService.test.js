@@ -18,9 +18,9 @@ function loadParkingService({
   fetchParkingById = async () => null,
   getSeedParkings = () => []
 } = {}) {
-  const apiServicePath = require.resolve("./apiService");
-  const dbPath = require.resolve("../config/db");
-  const servicePath = require.resolve("./parkingService");
+  const apiServicePath = require.resolve("../../src/services/apiService");
+  const dbPath = require.resolve("../../src/config/db");
+  const servicePath = require.resolve("../../src/services/parkingService");
 
   delete require.cache[apiServicePath];
   delete require.cache[dbPath];
@@ -45,7 +45,7 @@ function loadParkingService({
     }
   };
 
-  return require("./parkingService");
+  return require("../../src/services/parkingService");
 }
 
 test.afterEach(() => {

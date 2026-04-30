@@ -15,9 +15,9 @@ function restoreEnv() {
 }
 
 function loadApiService() {
-  const modulePath = require.resolve("./apiService");
+  const modulePath = require.resolve("../../src/services/apiService");
   delete require.cache[modulePath];
-  return require("./apiService");
+  return require("../../src/services/apiService");
 }
 
 test.afterEach(() => {
