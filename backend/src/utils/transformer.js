@@ -63,6 +63,29 @@ function clampPercentage(value) {
   return Math.min(100, Math.max(0, value));
 }
 
+function normalizeTextValue(value) {
+  if (value === undefined || value === null) {
+    return null;
+  }
+
+  if (typeof value === "string") {
+    const normalizedValue = value.trim();
+    return normalizedValue || null;
+  }
+
+  if (Array.isArray(value)) {
+    const parts = value.map((entry) => normalizeTextValue(entry)).filter(Boolean);
+    return parts.length > 0 ? parts.join("; ") : null;
+  }
+
+  if (typeof value === "object") {
+    return JSON.stringify(value);
+  }
+
+  const normalizedValue = String(value).trim();
+  return normalizedValue || null;
+}
+
 function normalizeStatus(sourceStatus) {
   if (!sourceStatus) {
     return null;
@@ -73,6 +96,7 @@ function normalizeStatus(sourceStatus) {
   if (
     [
       "full",
+      "occupied",
       "closed",
       "closedforentry",
       "closed_for_entry",
@@ -100,6 +124,7 @@ function normalizeStatus(sourceStatus) {
   if (
     [
       "open",
+      "opened",
       "spacesavailable",
       "spaces_available",
       "available",
@@ -126,7 +151,9 @@ function hasRealtimeData(item, fallbackSource, free, total, occupancyRate, norma
     "realtimeData",
     "realTimeData",
     "hasRealtimeData",
+    "has_realtime_data",
     "isRealtime",
+    "is_realtime",
     "live",
     "isLive"
   ]);
@@ -138,8 +165,14 @@ function hasRealtimeData(item, fallbackSource, free, total, occupancyRate, norma
   const realtimeStatus = deepPick(item, [
     "parkingStatusOriginTime",
     "publicationTime",
+    "realtimeDataUpdatedAt",
+    "realtime_data_updated_at",
     "lastUpdated",
     "updatedAt",
+    "realtimeFreeCapacity",
+    "realtime_free_capacity",
+    "realtimeCapacity",
+    "realtime_capacity",
     "parkingNumberOfVacantSpaces",
     "parking_number_of_vacant_spaces",
     "parkingNumberOfOccupiedSpaces",
@@ -218,6 +251,8 @@ function transformItem(item, fallbackSource = "external") {
       "available",
       "availableSlots",
       "num_free",
+      "realtimeFreeCapacity",
+      "realtime_free_capacity",
       "vacantSpaces",
       "vacant_spaces",
       "parkingNumberOfVacantSpaces",
@@ -231,6 +266,8 @@ function transformItem(item, fallbackSource = "external") {
       "total",
       "total_slots",
       "capacity",
+      "realtimeCapacity",
+      "realtime_capacity",
       "totalSlots",
       "parkingNumberOfSpaces",
       "parking_number_of_spaces",
@@ -261,6 +298,14 @@ function transformItem(item, fallbackSource = "external") {
       ])
     )
   );
+  const openingHours = normalizeTextValue(
+    deepPick(item, [
+      "opening_hours",
+      "openingHours",
+      "opening_times",
+      "openingTimes"
+    ])
+  );
 
   if (occupancyRate !== null && occupancyRate <= 1) {
     occupancyRate = Number((occupancyRate * 100).toFixed(2));
@@ -290,6 +335,12 @@ function transformItem(item, fallbackSource = "external") {
     "status",
     "state",
     "availability",
+    "realtimeStatus",
+    "realtime_status",
+    "realtimeOpeningStatus",
+    "realtime_opening_status",
+    "openingStatus",
+    "opening_status",
     "parkingSiteStatus",
     "parking_site_status",
     "parkingSiteStatusEnum",
@@ -305,6 +356,7 @@ function transformItem(item, fallbackSource = "external") {
     lng,
     free,
     total,
+    openingHours,
     occupancyRate,
     status: normalizedStatus,
     realtimeData: hasRealtimeData(
@@ -315,11 +367,13 @@ function transformItem(item, fallbackSource = "external") {
       occupancyRate,
       normalizedStatus
     ),
-    source: String(deepPick(item, ["source", "source_uid"]) ?? fallbackSource),
+    source: String(deepPick(item, ["source", "source_uid", "sourceId", "source_id"]) ?? fallbackSource),
     updatedAt: String(
       deepPick(item, [
         "updatedAt",
         "updated_at",
+        "realtimeDataUpdatedAt",
+        "realtime_data_updated_at",
         "lastUpdated",
         "last_updated",
         "publicationTime",
