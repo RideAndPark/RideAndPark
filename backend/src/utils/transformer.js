@@ -63,6 +63,29 @@ function clampPercentage(value) {
   return Math.min(100, Math.max(0, value));
 }
 
+function normalizeTextValue(value) {
+  if (value === undefined || value === null) {
+    return null;
+  }
+
+  if (typeof value === "string") {
+    const normalizedValue = value.trim();
+    return normalizedValue || null;
+  }
+
+  if (Array.isArray(value)) {
+    const parts = value.map((entry) => normalizeTextValue(entry)).filter(Boolean);
+    return parts.length > 0 ? parts.join("; ") : null;
+  }
+
+  if (typeof value === "object") {
+    return JSON.stringify(value);
+  }
+
+  const normalizedValue = String(value).trim();
+  return normalizedValue || null;
+}
+
 function normalizeStatus(sourceStatus) {
   if (!sourceStatus) {
     return null;
@@ -275,6 +298,14 @@ function transformItem(item, fallbackSource = "external") {
       ])
     )
   );
+  const openingHours = normalizeTextValue(
+    deepPick(item, [
+      "opening_hours",
+      "openingHours",
+      "opening_times",
+      "openingTimes"
+    ])
+  );
 
   if (occupancyRate !== null && occupancyRate <= 1) {
     occupancyRate = Number((occupancyRate * 100).toFixed(2));
@@ -325,6 +356,7 @@ function transformItem(item, fallbackSource = "external") {
     lng,
     free,
     total,
+    openingHours,
     occupancyRate,
     status: normalizedStatus,
     realtimeData: hasRealtimeData(

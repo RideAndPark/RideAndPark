@@ -11,7 +11,7 @@ let cache = {
 let pendingLoad = null;
 
 const DEFAULT_RADIUS_KM = 5;
-const DEFAULT_CACHE_TTL_MS = 30000;
+const DEFAULT_CACHE_TTL_MS = 600000;
 
 function isFallbackAllowed() {
   return String(process.env.ALLOW_FALLBACK_DATA ?? "true").toLowerCase() === "true";

@@ -6,6 +6,7 @@ class ParkingModel {
     lng,
     free,
     total = null,
+    openingHours = null,
     occupancyRate = null,
     status = "unknown",
     realtimeData = false,
@@ -18,6 +19,7 @@ class ParkingModel {
     this.lng = lng;
     this.free = free;
     this.total = total;
+    this.openingHours = openingHours;
     this.occupancyRate = occupancyRate;
     this.status = status;
     this.realtimeData = realtimeData;

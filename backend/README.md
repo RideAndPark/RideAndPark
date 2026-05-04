@@ -16,6 +16,7 @@ npm run dev
 - `CORS_ORIGIN`: erlaubte Frontend-Origin
 - `PARKING_API_URL`: externe API fuer Live-Daten, standardmaessig MobiData BW ParkAPI
 - `PARKING_API_TIMEOUT_MS`: Timeout fuer den externen Abruf, Standard `20000`
+- `PARKING_CACHE_TTL_MS`: Cache-Dauer fuer externe Daten, Standard `600000` (10 Minuten)
 - `ALLOW_FALLBACK_DATA`: `true`, um bei fehlender API lokale Seed-Daten zu liefern
 
 ## Endpunkte

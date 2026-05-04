@@ -64,7 +64,8 @@ test("getProcessedParkings transforms external records and reuses cache for repe
           latitude: 48.13,
           longitude: 11.57,
           free_slots: 50,
-          total_slots: 100
+          total_slots: 100,
+          opening_hours: "24/7"
         }
       ];
     }
@@ -77,6 +78,7 @@ test("getProcessedParkings transforms external records and reuses cache for repe
   assert.equal(firstResult.meta.source, "external");
   assert.equal(firstResult.data.length, 1);
   assert.equal(firstResult.data[0].id, "ext-1");
+  assert.equal(firstResult.data[0].openingHours, "24/7");
   assert.equal(firstResult.data[0].status, "open");
   assert.equal(secondResult.meta.count, 1);
 });
