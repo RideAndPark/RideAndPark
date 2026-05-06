@@ -311,6 +311,12 @@ function ParkingMap({ parkings, target, radiusKm, selectedParking, onSelectParki
               {metrics.totalLabel}
               <br />
               {metrics.occupancyLabel}
+              {parking.openingHours ? (
+                <>
+                  <br />
+                  <small>Öffnungszeiten: {parking.openingHours}</small>
+                </>
+              ) : null}
             </Popup>
           </CircleMarker>
         )
@@ -763,6 +769,12 @@ function App() {
                         : 'kein Ziel gesetzt'}
                     </span>
                   </div>
+                  {selectedParking.openingHours ? (
+                    <div className="metadata-item">
+                      <span className="metadata-label">Öffnungszeiten</span>
+                      <span className="metadata-value">{selectedParking.openingHours}</span>
+                    </div>
+                  ) : null}
                 </div>
               </div>
             </article>
@@ -800,6 +812,11 @@ function App() {
                           ? ` · ${parking.distanceKm.toFixed(1)} km entfernt`
                           : ''}
                       </small>
+                      {parking.openingHours ? (
+                        <small style={{ color: '#6b7280', display: 'block', marginTop: '4px' }}>
+                          {parking.openingHours}
+                        </small>
+                      ) : null}
                     </span>
                   </button>
                 )
