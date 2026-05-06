@@ -172,6 +172,7 @@ function hasRealtimeData(item, fallbackSource, free, total, occupancyRate, norma
   }
 
   const realtimeFlag = deepPick(item, [
+    "has_realtime_data",
     "realtimeData",
     "realTimeData",
     "hasRealtimeData",
@@ -270,6 +271,7 @@ function transformItem(item, fallbackSource = "external") {
   );
   let free = asNumber(
     deepPick(item, [
+      "realtime_free_capacity",
       "free",
       "free_slots",
       "available",
@@ -342,6 +344,11 @@ function transformItem(item, fallbackSource = "external") {
   }
 
   if (occupancyRate === null && total !== null && total > 0 && free !== null) {
+    occupancyRate = Number((((total - free) / total) * 100).toFixed(2));
+  }
+
+  // Safeguard: Wenn occupancyRate 0 ist aber Free > 0, neu berechnen
+  if ((occupancyRate === 0 || occupancyRate === null) && total !== null && total > 0 && free !== null && free > 0) {
     occupancyRate = Number((((total - free) / total) * 100).toFixed(2));
   }
 
