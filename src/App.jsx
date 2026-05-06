@@ -13,9 +13,56 @@ import { PieChart, Pie, Cell, Legend, Tooltip as RechartsTooltip, ResponsiveCont
 import './App.css'
 
 const DEFAULT_CENTER = [48.1372, 11.5756]
-const DEFAULT_RADIUS_KM = 5
-const DEFAULT_REFRESH_SECONDS = 30
-const REFRESH_OPTIONS = [15, 30, 60, 120]
+const DEFAULT_RADIUS_KM = 3
+const DEFAULT_REFRESH_SECONDS = 60
+const REFRESH_OPTIONS = [60, 120, 300, 600, 900]
+
+function ParkingDetailSkeleton() {
+  return (
+    <article className="detail-card skeleton-card">
+      <div className="skeleton skeleton-bar" style={{ width: '60%' }} />
+      <div className="skeleton skeleton-text" />
+      <div className="skeleton skeleton-bar" />
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+        <div className="skeleton skeleton-bar" />
+        <div className="skeleton skeleton-bar" />
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
+        <div className="skeleton skeleton-text" />
+        <div className="skeleton skeleton-text" />
+        <div className="skeleton skeleton-text" />
+      </div>
+    </article>
+  )
+}
+
+function ParkingListSkeleton() {
+  return (
+    <div className="list-panel">
+      <h3>Trefferliste</h3>
+      <div className="parking-list">
+        {[1, 2, 3, 4, 5].map((idx) => (
+          <div key={`skeleton-${idx}`} className="skeleton-card skeleton" style={{ height: '80px', borderRadius: '12px' }} />
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function SkeletonBox({ width = '100%', height = '20px', style = {} }) {
+  return (
+    <span 
+      className="skeleton" 
+      style={{ 
+        height, 
+        width, 
+        borderRadius: '4px', 
+        display: 'inline-block',
+        ...style
+      }} 
+    />
+  )
+}
 
 function formatNumber(value) {
   if (value === null || value === undefined || Number.isNaN(value)) {
@@ -42,6 +89,14 @@ function formatDate(value) {
   }).format(date)
 }
 
+function formatRefreshInterval(seconds) {
+  const minutes = seconds / 60
+  if (minutes === 1) {
+    return '1 Minute'
+  }
+  return `${minutes} Minuten`
+}
+
 function normalizeStatus(status) {
   const normalized = String(status ?? 'unknown').toLowerCase()
 
@@ -62,30 +117,30 @@ function normalizeStatus(status) {
 
 function getOccupancyColor(parking) {
   if (parking.status === 'full') {
-    return '#cf3d2e'
+    return '#ef4444'
   }
 
   if (parking.status === 'limited') {
-    return '#d98a1f'
+    return '#f59e0b'
   }
 
   if (parking.status === 'open') {
-    return '#1f8a5b'
+    return '#10b981'
   }
 
   if (parking.occupancyRate !== null && parking.occupancyRate !== undefined) {
     if (parking.occupancyRate >= 95) {
-      return '#cf3d2e'
+      return '#ef4444'
     }
 
     if (parking.occupancyRate >= 80) {
-      return '#d98a1f'
+      return '#f59e0b'
     }
 
-    return '#1f8a5b'
+    return '#10b981'
   }
 
-  return '#5f6b76'
+  return '#6b7280'
 }
 
 function getMarkerRadius(parking) {
@@ -267,12 +322,12 @@ function ParkingMap({ parkings, target, radiusKm, selectedParking, onSelectParki
           <Circle
             center={[target.lat, target.lng]}
             radius={radiusKm * 1000}
-            pathOptions={{ color: '#0f6c74', fillColor: '#7fd2d0', fillOpacity: 0.08 }}
+            pathOptions={{ color: '#0066cc', fillColor: '#e6f0ff', fillOpacity: 0.08 }}
           />
           <CircleMarker
             center={[target.lat, target.lng]}
             radius={8}
-            pathOptions={{ color: '#08363a', fillColor: '#0f6c74', fillOpacity: 1, weight: 2 }}
+            pathOptions={{ color: '#0052a3', fillColor: '#0066cc', fillOpacity: 1, weight: 2 }}
           >
             <Tooltip direction="top" offset={[0, -6]} opacity={1} permanent>
               Ziel
@@ -334,6 +389,7 @@ function App() {
   const [radiusKm, setRadiusKm] = useState(DEFAULT_RADIUS_KM)
   const [refreshSeconds, setRefreshSeconds] = useState(DEFAULT_REFRESH_SECONDS)
   const [realtimeOnly, setRealtimeOnly] = useState(true)
+  const [onlyOpenParkings, setOnlyOpenParkings] = useState(false)
   const [meta, setMeta] = useState(null)
   const [loading, setLoading] = useState(true)
   const [searching, setSearching] = useState(false)
@@ -353,6 +409,10 @@ function App() {
       params.set('realtimeData', 'true')
     }
 
+    if (onlyOpenParkings) {
+      params.set('onlyOpen', 'true')
+    }
+
     const query = params.toString()
     const response = await fetch(query ? `/api/parkings?${query}` : '/api/parkings')
 
@@ -361,7 +421,7 @@ function App() {
     }
 
     return response.json()
-  }, [radiusKm, realtimeOnly, target])
+  }, [radiusKm, realtimeOnly, onlyOpenParkings, target])
 
   const applyParkingResult = useCallback((result) => {
     const nextParkings = result.data ?? []
@@ -390,6 +450,27 @@ function App() {
       setLoading(false)
     }
   }, [applyParkingResult, fetchParkings])
+
+  const refreshStatisticsOnly = useCallback(async () => {
+    try {
+      const response = await fetch('/api/statistics')
+      
+      if (!response.ok) {
+        throw new Error(`API-Fehler ${response.status}`)
+      }
+
+      const result = await response.json()
+      const stats = result.data ?? {}
+
+      setMeta((prevMeta) => ({
+        ...prevMeta,
+        stats,
+        lastUpdated: result.meta?.loadedAt ?? new Date().toISOString(),
+      }))
+    } catch (error) {
+      console.warn('Statistics refresh failed:', error.message)
+    }
+  }, [])
 
   async function handleTargetSearch(event) {
     event.preventDefault()
@@ -500,11 +581,11 @@ function App() {
 
   useEffect(() => {
     const interval = window.setInterval(() => {
-      refreshParkings()
+      refreshStatisticsOnly()
     }, refreshSeconds * 1000)
 
     return () => window.clearInterval(interval)
-  }, [refreshParkings, refreshSeconds])
+  }, [refreshStatisticsOnly, refreshSeconds])
 
   const statusCounts = useMemo(() => {
     return enrichedParkings.reduce(
@@ -601,7 +682,7 @@ function App() {
                 <input
                   type="range"
                   min="1"
-                  max="25" // hier anpassen. zu viel! Keiner läuft so weit
+                  max="3"
                   step="1"
                   value={radiusKm}
                   onChange={(event) => {
@@ -621,7 +702,7 @@ function App() {
               >
                 {REFRESH_OPTIONS.map((option) => (
                   <option key={option} value={option}>
-                    alle {option} s
+                    {formatRefreshInterval(option)}
                   </option>
                 ))}
               </select>
@@ -639,6 +720,17 @@ function App() {
                   }}
                 />
                 <span>Nur Echtzeitdaten anzeigen</span>
+              </label>
+              <label className="checkbox-row">
+                <input
+                  type="checkbox"
+                  checked={onlyOpenParkings}
+                  onChange={(event) => {
+                    setLoading(true)
+                    setOnlyOpenParkings(event.target.checked)
+                  }}
+                />
+                <span>Nur offene Parkplätze anzeigen</span>
               </label>
             </label>
 
@@ -707,14 +799,14 @@ function App() {
           </div>
 
           {selectedParking ? (
-            <article className="detail-card">
+            <article className="detail-card slide-in-up">
               <div className="detail-header">
                 <div>
                   <h3>{selectedParking.name}</h3>
                   <p>{normalizeStatus(selectedParking.status)}</p>
                 </div>
                 <span
-                  className="occupancy-dot"
+                  className={`occupancy-dot ${selectedParking.status === 'limited' ? 'pulse-limited' : ''}`}
                   style={{ backgroundColor: getOccupancyColor(selectedParking) }}
                 />
               </div>
@@ -724,11 +816,11 @@ function App() {
                   <div className="stat-row">
                     <div className="stat-item">
                       <span className="stat-label">Freie Plätze</span>
-                      <span className="stat-value">{formatNumber(selectedParking.free)}</span>
+                      <span className="stat-value">{loading ? <SkeletonBox width="80%" height="28px" /> : formatNumber(selectedParking.free)}</span>
                     </div>
                     <div className="stat-item">
                       <span className="stat-label">Kapazität</span>
-                      <span className="stat-value">{formatNumber(selectedParking.total)}</span>
+                      <span className="stat-value">{loading ? <SkeletonBox width="60%" height="28px" /> : formatNumber(selectedParking.total)}</span>
                     </div>
                   </div>
 
@@ -736,9 +828,9 @@ function App() {
                     <div className="occupancy-header">
                       <span className="occupancy-label">Auslastung</span>
                       <span className="occupancy-percentage">
-                        {selectedParking.occupancyRate !== null
+                        {loading ? <SkeletonBox width="80px" height="20px" /> : (selectedParking.occupancyRate !== null
                           ? `${selectedParking.occupancyRate.toFixed(1)} %`
-                          : 'k. A.'}
+                          : 'k. A.')}
                       </span>
                     </div>
                     <div className="progress-bar">
@@ -755,21 +847,21 @@ function App() {
                 <div className="metadata-section">
                   <div className="metadata-item">
                     <span className="metadata-label">Letzte Meldung</span>
-                    <span className="metadata-value">{formatDate(selectedParking.updatedAt)}</span>
+                    <span className="metadata-value">{loading ? <SkeletonBox width="100%" height="16px" /> : formatDate(selectedParking.updatedAt)}</span>
                   </div>
                   <div className="metadata-item">
                     <span className="metadata-label">Quelle</span>
-                    <span className="metadata-value">{selectedParking.source}</span>
+                    <span className="metadata-value">{loading ? <SkeletonBox width="70%" height="16px" /> : selectedParking.source}</span>
                   </div>
                   <div className="metadata-item">
                     <span className="metadata-label">Entfernung</span>
                     <span className="metadata-value">
-                      {selectedParking.distanceKm !== null
+                      {loading ? <SkeletonBox width="60%" height="16px" /> : (selectedParking.distanceKm !== null
                         ? `${selectedParking.distanceKm.toFixed(1)} km`
-                        : 'kein Ziel gesetzt'}
+                        : 'kein Ziel gesetzt')}
                     </span>
                   </div>
-                  {selectedParking.openingHours ? (
+                  {!loading && selectedParking.openingHours ? (
                     <div className="metadata-item">
                       <span className="metadata-label">Öffnungszeiten</span>
                       <span className="metadata-value">{selectedParking.openingHours}</span>
@@ -788,39 +880,49 @@ function App() {
           <div className="list-panel">
             <h3>Trefferliste</h3>
             <div className="parking-list">
-              {enrichedParkings.map((parking) => {
-                const metrics = getParkingMetrics(parking)
+              {loading && enrichedParkings.length === 0 ? (
+                [...Array(5)].map((_, idx) => (
+                  <div key={`skeleton-${idx}`} className="skeleton-card skeleton" style={{ height: '80px', borderRadius: '12px' }} />
+                ))
+              ) : enrichedParkings.length > 0 ? (
+                enrichedParkings.map((parking) => {
+                  const metrics = getParkingMetrics(parking)
 
-                return (
-                  <button
-                    key={parking.id}
-                    type="button"
-                    className={`parking-row ${
-                      selectedParking?.id === parking.id ? 'is-selected' : ''
-                    }`}
-                    onClick={() => setSelectedParkingId(parking.id)}
-                  >
-                    <span
-                      className="occupancy-dot"
-                      style={{ backgroundColor: getOccupancyColor(parking) }}
-                    />
-                    <span className="parking-row-copy">
-                      <strong>{parking.name}</strong>
-                      <small>
-                        {metrics.freeLabel} · {metrics.occupancyLabel}
-                        {parking.distanceKm !== null
-                          ? ` · ${parking.distanceKm.toFixed(1)} km entfernt`
-                          : ''}
-                      </small>
-                      {parking.openingHours ? (
-                        <small style={{ color: '#6b7280', display: 'block', marginTop: '4px' }}>
-                          {parking.openingHours}
+                  return (
+                    <button
+                      key={parking.id}
+                      type="button"
+                      className={`parking-row ${
+                        selectedParking?.id === parking.id ? 'is-selected' : ''
+                      }`}
+                      onClick={() => setSelectedParkingId(parking.id)}
+                    >
+                      <span
+                        className="occupancy-dot"
+                        style={{ backgroundColor: getOccupancyColor(parking) }}
+                      />
+                      <span className="parking-row-copy">
+                        <strong>{parking.name}</strong>
+                        <small>
+                          {metrics.freeLabel} · {metrics.occupancyLabel}
+                          {parking.distanceKm !== null
+                            ? ` · ${parking.distanceKm.toFixed(1)} km entfernt`
+                            : ''}
                         </small>
-                      ) : null}
-                    </span>
-                  </button>
-                )
-              })}
+                        {parking.openingHours ? (
+                          <small style={{ color: '#6b7280', display: 'block', marginTop: '4px' }}>
+                            {parking.openingHours}
+                          </small>
+                        ) : null}
+                      </span>
+                    </button>
+                  )
+                })
+              ) : (
+                <div style={{ padding: '20px', textAlign: 'center', color: '#6b7280' }}>
+                  Keine Parkplätze gefunden
+                </div>
+              )}
             </div>
           </div>
         </section>

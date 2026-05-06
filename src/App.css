@@ -18,6 +18,11 @@
   --neutral-700: #374151;
   --neutral-800: #1f2937;
   --neutral-900: #111827;
+  /* Parking Status Colors - Unified Palette */
+  --parking-open: #10b981;
+  --parking-limited: #f59e0b;
+  --parking-full: #ef4444;
+  --parking-unknown: #6b7280;
   --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
   --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
   --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
@@ -233,38 +238,72 @@ body {
 .range-row input[type="range"] {
   appearance: none;
   width: 100%;
-  height: 6px;
-  border-radius: 3px;
-  background: linear-gradient(to right, var(--primary) 0%, var(--primary) 50%, var(--neutral-200) 50%, var(--neutral-200) 100%);
+  height: 8px;
+  border-radius: 4px;
+  background: linear-gradient(to right, var(--primary) 0%, var(--primary) 100%);
   outline: none;
   cursor: pointer;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.range-row input[type="range"]::-webkit-slider-runnable-track {
+  appearance: none;
+  height: 8px;
+  border-radius: 4px;
+  background: linear-gradient(to right, var(--primary) 0%, var(--primary) 100%);
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .range-row input[type="range"]::-webkit-slider-thumb {
   appearance: none;
-  width: 20px;
-  height: 20px;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
-  background: var(--primary);
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
   cursor: pointer;
-  box-shadow: var(--shadow-md);
+  border: 2px solid white;
+  box-shadow: 0 4px 12px rgba(0, 102, 204, 0.3);
   transition: all 0.2s ease;
+  margin-top: -8px;
 }
 
 .range-row input[type="range"]::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+  box-shadow: 0 6px 20px rgba(0, 102, 204, 0.4), 0 0 0 8px rgba(0, 102, 204, 0.1);
+}
+
+.range-row input[type="range"]::-webkit-slider-thumb:active {
   transform: scale(1.15);
-  box-shadow: 0 0 0 8px rgba(0, 102, 204, 0.1);
+  box-shadow: 0 2px 8px rgba(0, 102, 204, 0.3), 0 0 0 12px rgba(0, 102, 204, 0.15);
+}
+
+.range-row input[type="range"]::-moz-range-track {
+  background: linear-gradient(to right, var(--primary) 0%, var(--primary) 100%);
+  border: none;
+  border-radius: 4px;
+  height: 8px;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .range-row input[type="range"]::-moz-range-thumb {
-  width: 20px;
-  height: 20px;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
-  background: var(--primary);
-  border: none;
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+  border: 2px solid white;
   cursor: pointer;
-  box-shadow: var(--shadow-md);
+  box-shadow: 0 4px 12px rgba(0, 102, 204, 0.3);
   transition: all 0.2s ease;
+}
+
+.range-row input[type="range"]::-moz-range-thumb:hover {
+  transform: scale(1.2);
+  box-shadow: 0 6px 20px rgba(0, 102, 204, 0.4), 0 0 0 8px rgba(0, 102, 204, 0.1);
+}
+
+.range-row input[type="range"]::-moz-range-thumb:active {
+  transform: scale(1.15);
+  box-shadow: 0 2px 8px rgba(0, 102, 204, 0.3), 0 0 0 12px rgba(0, 102, 204, 0.15);
 }
 
 .range-row strong {
@@ -808,6 +847,175 @@ body {
 
 .leaflet-popup-close-button:hover {
   color: var(--neutral-900);
+}
+
+/* ========== NEW ANIMATIONS & EFFECTS ========== */
+
+/* Skeleton Loading Effect */
+@keyframes shimmer {
+  0% {
+    background-position: -1200px 0;
+  }
+  100% {
+    background-position: 1200px 0;
+  }
+}
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--neutral-200) 25%,
+    var(--neutral-100) 50%,
+    var(--neutral-200) 75%
+  );
+  background-size: 1200px 100%;
+  animation: shimmer 2s infinite;
+}
+
+.skeleton-text {
+  height: 16px;
+  border-radius: 4px;
+  margin-bottom: 8px;
+}
+
+.skeleton-bar {
+  height: 24px;
+  border-radius: 8px;
+  margin-bottom: 12px;
+}
+
+.skeleton-card {
+  border-radius: 16px;
+  padding: 24px;
+  display: grid;
+  gap: 12px;
+}
+
+/* Smooth Fade In */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.fade-in {
+  animation: fadeIn 0.4s ease;
+}
+
+/* Slide In from Bottom */
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.slide-in-up {
+  animation: slideInUp 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Card Elevation on Hover */
+@keyframes elevate {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-4px);
+  }
+}
+
+.detail-card {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.detail-card:hover {
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15), 0 10px 10px -5px rgba(0, 0, 0, 0.08);
+  transform: translateY(-4px);
+}
+
+/* Enhanced Status Dot Pulse - Limited Status */
+.occupancy-dot.pulse-limited {
+  animation: pulseLimited 1.5s ease-in-out infinite;
+}
+
+@keyframes pulseLimited {
+  0%, 100% {
+    box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.8), 0 0 0 8px rgba(245, 158, 11, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.8), 0 0 16px rgba(245, 158, 11, 0.6);
+  }
+}
+
+/* Progress Bar Enhanced Animation */
+.progress-fill {
+  position: relative;
+  overflow: hidden;
+}
+
+.progress-fill::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.3) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  animation: shimmerBar 2s infinite;
+}
+
+@keyframes shimmerBar {
+  0% {
+    left: -100%;
+  }
+  100% {
+    left: 100%;
+  }
+}
+
+/* Stagger Animation for List Items */
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.parking-row {
+  animation: slideInLeft 0.3s ease both;
+}
+
+.parking-row:nth-child(1) { animation-delay: 0ms; }
+.parking-row:nth-child(2) { animation-delay: 50ms; }
+.parking-row:nth-child(3) { animation-delay: 100ms; }
+.parking-row:nth-child(4) { animation-delay: 150ms; }
+.parking-row:nth-child(5) { animation-delay: 200ms; }
+.parking-row:nth-child(n+6) { animation-delay: 250ms; }
+
+/* Smooth transitions for interactive elements */
+button {
+  transition: all 0.2s ease;
+}
+
+input:not([type="range"]):not([type="checkbox"]),
+select {
+  transition: all 0.2s ease;
 }
 
 @media (max-width: 1400px) {
