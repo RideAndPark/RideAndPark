@@ -1,8 +1,17 @@
 const { createParkingModel } = require("../models/parkingModel");
 
 function asNumber(value) {
+  if (value === undefined || value === null || value === "") {
+    return null;
+  }
+
   if (typeof value === "string") {
     const normalizedValue = value.trim().replace(",", ".");
+
+    if (!normalizedValue) {
+      return null;
+    }
+
     const numeric = Number(normalizedValue);
     return Number.isFinite(numeric) ? numeric : null;
   }
@@ -61,6 +70,21 @@ function clampPercentage(value) {
   }
 
   return Math.min(100, Math.max(0, value));
+}
+
+function normalizeOccupancyRate(value) {
+  const numericValue = asNumber(value);
+
+  if (numericValue === null) {
+    return null;
+  }
+
+  const percentageValue =
+    numericValue > 0 && numericValue <= 1
+      ? Number((numericValue * 100).toFixed(2))
+      : numericValue;
+
+  return clampPercentage(percentageValue);
 }
 
 function normalizeTextValue(value) {
@@ -286,17 +310,15 @@ function transformItem(item, fallbackSource = "external") {
       "parkingNumberOfVehicles"
     ])
   );
-  let occupancyRate = clampPercentage(
-    asNumber(
-      deepPick(item, [
-        "occupancyRate",
-        "occupancy_rate",
-        "occupancy",
-        "parkingOccupancy",
-        "parking_occupancy",
-        "percentage"
-      ])
-    )
+  let occupancyRate = normalizeOccupancyRate(
+    deepPick(item, [
+      "occupancyRate",
+      "occupancy_rate",
+      "occupancy",
+      "parkingOccupancy",
+      "parking_occupancy",
+      "percentage"
+    ])
   );
   const openingHours = normalizeTextValue(
     deepPick(item, [
@@ -306,10 +328,6 @@ function transformItem(item, fallbackSource = "external") {
       "openingTimes"
     ])
   );
-
-  if (occupancyRate !== null && occupancyRate <= 1) {
-    occupancyRate = Number((occupancyRate * 100).toFixed(2));
-  }
 
   if (free === null && total !== null && occupied !== null) {
     free = total - occupied;
