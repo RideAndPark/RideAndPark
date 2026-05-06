@@ -138,9 +138,20 @@ function applyRealtimeFilter(parkings, filters = {}) {
   return parkings.filter((parking) => parking.realtimeData === true);
 }
 
+function applyOpenFilter(parkings, filters = {}) {
+  if (filters.onlyOpen !== true) {
+    return parkings;
+  }
+
+  return parkings.filter((parking) => parking.status === 'open');
+}
+
 function buildFilteredResult(data, filters, source, warning = null) {
   const filteredData = applyRadiusFilter(
-    applyRealtimeFilter(applySourceFilter(applyNameFilter(data, filters), filters), filters),
+    applyOpenFilter(
+      applyRealtimeFilter(applySourceFilter(applyNameFilter(data, filters), filters), filters),
+      filters
+    ),
     filters
   );
 
@@ -279,6 +290,29 @@ async function refreshParkings() {
   return loadParkings({ forceRefresh: true });
 }
 
+async function getStatistics() {
+  const baseResult = await getBaseParkings();
+  const parkings = baseResult.data;
+
+  const stats = parkings.reduce(
+    (accumulator, parking) => {
+      accumulator.total += 1;
+      accumulator[parking.status] = (accumulator[parking.status] ?? 0) + 1;
+      return accumulator;
+    },
+    { total: 0, open: 0, limited: 0, full: 0, unknown: 0 }
+  );
+
+  return {
+    data: stats,
+    meta: {
+      source: baseResult.source,
+      loadedAt: baseResult.loadedAt,
+      warning: baseResult.warning
+    }
+  };
+}
+
 async function getParkingById(id) {
   try {
     const rawData = await apiService.fetchParkingById(id);
@@ -315,5 +349,6 @@ async function getParkingById(id) {
 module.exports = {
   getProcessedParkings,
   getParkingById,
-  refreshParkings
+  refreshParkings,
+  getStatistics
 };

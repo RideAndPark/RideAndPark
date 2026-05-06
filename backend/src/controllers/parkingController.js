@@ -62,10 +62,13 @@ async function getParkings(req, res, next) {
       throw error;
     }
 
+    const onlyOpen = parseBooleanQueryParam(req.query.onlyOpen, "onlyOpen");
+
     const result = await parkingService.getProcessedParkings({
       name: req.query.name,
       source_uid: req.query.source_uid,
       realtimeData,
+      onlyOpen,
       target_lat: targetLat,
       target_lng: targetLng,
       radius_km: radiusKm
@@ -121,10 +124,20 @@ function getHealth(req, res) {
   });
 }
 
+async function getStatistics(req, res, next) {
+  try {
+    const result = await parkingService.getStatistics();
+    res.json(result);
+  } catch (error) {
+    next(error);
+  }
+}
+
 module.exports = {
   getParkings,
   getParkingById,
   refreshParkings,
   geocode,
-  getHealth
+  getHealth,
+  getStatistics
 };
