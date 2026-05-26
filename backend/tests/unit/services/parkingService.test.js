@@ -18,9 +18,9 @@ function loadParkingService({
   fetchParkingById = async () => null,
   getSeedParkings = () => []
 } = {}) {
-  const apiServicePath = require.resolve("../../src/services/apiService");
-  const dbPath = require.resolve("../../src/config/db");
-  const servicePath = require.resolve("../../src/services/parkingService");
+  const apiServicePath = require.resolve("../../../src/services/apiService");
+  const dbPath = require.resolve("../../../src/config/db");
+  const servicePath = require.resolve("../../../src/services/parkingService");
 
   delete require.cache[apiServicePath];
   delete require.cache[dbPath];
@@ -45,14 +45,14 @@ function loadParkingService({
     }
   };
 
-  return require("../../src/services/parkingService");
+  return require("../../../src/services/parkingService");
 }
 
 test.afterEach(() => {
   restoreEnv();
 });
 
-test("getProcessedParkings transforms external records and reuses cache for repeated requests", async () => {
+test("getProcessedParkings transforms external records and reuses a fresh cache", async () => {
   let fetchCalls = 0;
   const service = loadParkingService({
     fetchParkingData: async () => {
@@ -81,6 +81,60 @@ test("getProcessedParkings transforms external records and reuses cache for repe
   assert.equal(firstResult.data[0].openingHours, "24/7");
   assert.equal(firstResult.data[0].status, "open");
   assert.equal(secondResult.meta.count, 1);
+});
+
+test("getProcessedParkings applies name, source, realtime and open filters", async () => {
+  const service = loadParkingService({
+    fetchParkingData: async () => [
+      {
+        id: "match-1",
+        name: "Central Garage",
+        latitude: 48.13,
+        longitude: 11.57,
+        free_slots: 20,
+        total_slots: 100,
+        source_uid: "provider-a",
+        has_realtime_data: true,
+        status: "open"
+      },
+      {
+        id: "skip-1",
+        name: "Central Depot",
+        latitude: 48.15,
+        longitude: 11.58,
+        free_slots: 0,
+        total_slots: 90,
+        source_uid: "provider-a",
+        has_realtime_data: true,
+        status: "full"
+      },
+      {
+        id: "skip-2",
+        name: "Central Garage Remote",
+        latitude: 48.16,
+        longitude: 11.59,
+        free_slots: 10,
+        total_slots: 50,
+        source_uid: "provider-b",
+        has_realtime_data: false,
+        status: "open"
+      }
+    ]
+  });
+
+  const result = await service.getProcessedParkings({
+    name: "central garage",
+    source_uid: "provider-a",
+    realtimeData: true,
+    onlyOpen: true
+  });
+
+  assert.deepEqual(
+    result.data.map((parking) => parking.id),
+    ["match-1"]
+  );
+  assert.equal(result.meta.filters.realtimeData, true);
+  assert.equal(result.meta.filters.onlyOpen, true);
 });
 
 test("getProcessedParkings falls back to seed data when the external source fails", async () => {
@@ -144,6 +198,48 @@ test("getProcessedParkings applies the radius filter to transformed records", as
     ["nearby"]
   );
   assert.equal(result.meta.filters.radius_km, 5);
+});
+
+test("getStatistics aggregates parking statuses from the cached base result", async () => {
+  const service = loadParkingService({
+    fetchParkingData: async () => [
+      {
+        id: "open-1",
+        name: "Open One",
+        latitude: 48.13,
+        longitude: 11.57,
+        free_slots: 30,
+        total_slots: 100
+      },
+      {
+        id: "limited-1",
+        name: "Limited One",
+        latitude: 48.14,
+        longitude: 11.58,
+        free_slots: 5,
+        total_slots: 100
+      },
+      {
+        id: "full-1",
+        name: "Full One",
+        latitude: 48.15,
+        longitude: 11.59,
+        free_slots: 0,
+        total_slots: 80
+      }
+    ]
+  });
+
+  const result = await service.getStatistics();
+
+  assert.deepEqual(result.data, {
+    total: 3,
+    open: 1,
+    limited: 1,
+    full: 1,
+    unknown: 0
+  });
+  assert.equal(result.meta.source, "external");
 });
 
 test("getParkingById returns transformed external data when available", async () => {
