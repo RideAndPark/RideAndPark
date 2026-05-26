@@ -12,6 +12,8 @@ backend/node_modules
 dist
 backend/dist
 dist-ssr
+playwright-report
+test-results
 *.local
 .env
 backend/.env

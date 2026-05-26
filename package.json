@@ -7,7 +7,11 @@
     "dev": "concurrently \"vite\" \"cd backend && npm run dev\"",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test:e2e": "playwright test",
+    "test:e2e:headed": "playwright test --headed",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:demo": "set PLAYWRIGHT_SLOW_MO=4000&& set PLAYWRIGHT_DEMO_MODE=true&& set PLAYWRIGHT_WINDOW_WIDTH=1720&& set PLAYWRIGHT_WINDOW_HEIGHT=980&& set PLAYWRIGHT_VIEWPORT_WIDTH=1600&& set PLAYWRIGHT_VIEWPORT_HEIGHT=940&& playwright test --headed --project=chromium --workers=1"
   },
   "dependencies": {
     "leaflet": "^1.9.4",
@@ -19,6 +23,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",
+    "@playwright/test": "^1.60.0",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.1",
