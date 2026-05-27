@@ -30,9 +30,9 @@ function HeaderComponent({ statusCounts, mapTheme, onMapThemeChange }) {
     <header className="hero">
       <div className="hero-copy">
         <p className="eyebrow">Ride &amp; Park Live</p>
-        <h1>Finde verfuegbare Parkplaetze in Echtzeit.</h1>
+        <h1>Finde verfügbare Parkplätze in Echtzeit.</h1>
         <p className="hero-text">
-          Alle Plaetze und deren Status werden live auf der Karte angezeigt und automatisch aktualisiert.
+          Alle Plätze und deren Status werden live auf der Karte angezeigt und automatisch aktualisiert.
         </p>
       </div>
 
