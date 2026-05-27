@@ -91,18 +91,23 @@ function filterParkings(searchParams) {
   return filtered
 }
 
-export async function registerApiMocks(page) {
+export async function registerApiMocks(page, options = {}) {
   await page.route('**/api/parkings**', async (route) => {
     const url = new URL(route.request().url())
     const data = filterParkings(url.searchParams)
 
     await route.fulfill({
-      status: 200,
+      status: options.parkingsStatus || 200,
       contentType: 'application/json',
-      body: JSON.stringify({
-        data,
-        meta: buildMeta(data, Object.fromEntries(url.searchParams.entries())),
-      }),
+      body:
+        options.parkingsStatus && options.parkingsStatus !== 200
+          ? JSON.stringify({
+              error: `API-Fehler ${options.parkingsStatus}`,
+            })
+          : JSON.stringify({
+              data,
+              meta: buildMeta(data, Object.fromEntries(url.searchParams.entries())),
+            }),
     })
   })
 
@@ -119,13 +124,18 @@ export async function registerApiMocks(page) {
     const query = url.searchParams.get('q')
 
     await route.fulfill({
-      status: 200,
+      status: options.geocodeStatus || 200,
       contentType: 'application/json',
-      body: JSON.stringify({
-        lat: 48.7784,
-        lng: 9.18,
-        label: query === 'Stuttgart Hbf' ? 'Stuttgart Hauptbahnhof' : 'Mock Destination',
-      }),
+      body:
+        options.geocodeStatus && options.geocodeStatus !== 200
+          ? JSON.stringify({
+              error: `Geocoding fehlgeschlagen (${options.geocodeStatus})`,
+            })
+          : JSON.stringify({
+              lat: 48.7784,
+              lng: 9.18,
+              label: query === 'Stuttgart Hbf' ? 'Stuttgart Hauptbahnhof' : 'Mock Destination',
+            }),
     })
   })
 }
