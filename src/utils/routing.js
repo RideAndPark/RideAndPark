@@ -1,11 +1,17 @@
 /**
  * Fetch route coordinates from OSRM (Open Source Routing Machine)
  * Returns array of [lat, lng] coordinates or null if lookup fails
+ * @param {number} fromLat - Start latitude
+ * @param {number} fromLng - Start longitude
+ * @param {number} toLat - End latitude
+ * @param {number} toLng - End longitude
+ * @param {AbortSignal} signal - Abort signal for fetch
+ * @param {string} profile - Routing profile: 'driving', 'foot', or 'bike' (default: 'driving')
  */
-export async function getRouteCoordinates(fromLat, fromLng, toLat, toLng, signal) {
+export async function getRouteCoordinates(fromLat, fromLng, toLat, toLng, signal, profile = 'driving') {
   try {
     const response = await fetch(
-      `https://router.project-osrm.org/route/v1/driving/${fromLng},${fromLat};${toLng},${toLat}?overview=full&geometries=geojson`,
+      `https://router.project-osrm.org/route/v1/${profile}/${fromLng},${fromLat};${toLng},${toLat}?overview=full&geometries=geojson`,
       { signal },
     )
     

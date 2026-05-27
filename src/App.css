@@ -454,7 +454,7 @@ body {
 .meta-grid {
   margin-top: 24px;
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: 1fr;
   gap: 12px;
 }
 
@@ -645,6 +645,7 @@ body {
   min-height: auto;
   display: flex;
   flex-direction: column;
+  transform: translateX(-3px);
 }
 
 .detail-card:hover {
@@ -790,13 +791,13 @@ body {
 /* METADATA SECTION */
 .metadata-section {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: 1fr;
   gap: 12px;
 }
 
 @media (min-width: 1600px) {
   .metadata-section {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: 1fr;
   }
 }
 
@@ -1183,8 +1184,19 @@ body {
   position: absolute;
   left: 12px;
   color: var(--primary);
+}
+
+/* Theme Switcher on Map */
+.theme-switcher-map {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  display: flex;
+  flex-direction: column;
+  z-index: 1001;
   font-weight: 700;
 }
+  
 
 /* Enhanced Status Dot Pulse - Limited Status */
 .occupancy-dot.pulse-limited {
@@ -1369,6 +1381,15 @@ select {
     padding: 20px;
   }
 
+  .detail-card {
+    padding: 20px;
+    transform: translateX(-2px);
+  }
+
+  .detail-header {
+    flex-direction: column;
+  }
+
   .panel-header {
     margin-bottom: 18px;
   }
@@ -1397,6 +1418,36 @@ select {
 
   .status-card strong {
     font-size: 2rem;
+  }
+
+  .detail-card {
+    padding: 16px;
+    transform: translateX(0);
+    border-radius: 12px;
+  }
+
+  .detail-header {
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  .detail-card h3 {
+    font-size: 1.2rem;
+    margin-bottom: 8px;
+  }
+
+  .stat-row {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .stat-item {
+    width: 100%;
+  }
+
+  .parking-stats {
+    gap: 12px;
   }
 
   .panel {

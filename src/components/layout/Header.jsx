@@ -1,11 +1,9 @@
 import { lazy, memo, Suspense, useEffect, useState } from 'react'
-import { MAP_THEMES } from '../../utils/constants'
 
 const StatusPieChart = lazy(() => import('./StatusPieChart'))
 
-function HeaderComponent({ statusCounts, mapTheme, onMapThemeChange }) {
+function HeaderComponent({ statusCounts }) {
   const [loadChart, setLoadChart] = useState(false)
-  const [showThemeDropdown, setShowThemeDropdown] = useState(false)
 
   useEffect(() => {
     const idleCallback = window.requestIdleCallback
@@ -21,16 +19,11 @@ function HeaderComponent({ statusCounts, mapTheme, onMapThemeChange }) {
     }
   }, [])
 
-  const handleThemeChange = (themeId) => {
-    onMapThemeChange(themeId)
-    setShowThemeDropdown(false)
-  }
-
   return (
     <header className="hero">
       <div className="hero-copy">
         <p className="eyebrow">Ride &amp; Park Live</p>
-        <h1>Finde verfügbare Parkplätze in Echtzeit.</h1>
+        <h1>Finde verfügbare Parkplätze in Echtzeit</h1>
         <p className="hero-text">
           Alle Plätze und deren Status werden live auf der Karte angezeigt und automatisch aktualisiert.
         </p>
@@ -47,30 +40,7 @@ function HeaderComponent({ statusCounts, mapTheme, onMapThemeChange }) {
           )}
         </div>
 
-        <div className="theme-switcher">
-          <button
-            className="theme-switcher-button"
-            onClick={() => setShowThemeDropdown(!showThemeDropdown)}
-            title="Kartenstil aendern"
-            aria-label="Kartenstil aendern"
-          >
-            ⚙
-          </button>
 
-          {showThemeDropdown && (
-            <div className="theme-dropdown">
-              {Object.entries(MAP_THEMES).map(([themeId, theme]) => (
-                <button
-                  key={themeId}
-                  className={`theme-option ${mapTheme === themeId ? 'is-selected' : ''}`}
-                  onClick={() => handleThemeChange(themeId)}
-                >
-                  {theme.name}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
       </div>
     </header>
   )
