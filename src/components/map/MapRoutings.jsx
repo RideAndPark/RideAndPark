@@ -11,13 +11,13 @@ export function MapRoutings({ userLocation, selectedParking, target }) {
     const controller = new AbortController()
     let isMounted = true
 
-    const getCachedOrFetchRoute = async (fromLat, fromLng, toLat, toLng) => {
-      const key = `${fromLat},${fromLng}|${toLat},${toLng}`
+    const getCachedOrFetchRoute = async (fromLat, fromLng, toLat, toLng, profile = 'driving') => {
+      const key = `${fromLat},${fromLng}|${toLat},${toLng}|${profile}`
       if (routeCache.current.has(key)) {
         return routeCache.current.get(key)
       }
 
-      const route = await getRouteCoordinates(fromLat, fromLng, toLat, toLng, controller.signal)
+      const route = await getRouteCoordinates(fromLat, fromLng, toLat, toLng, controller.signal, profile)
       if (route) {
         routeCache.current.set(key, route)
       }
@@ -41,13 +41,14 @@ export function MapRoutings({ userLocation, selectedParking, target }) {
         }
       }
 
-      // Route: Parkhaus zum Ziel
+      // Route: Parkhaus zum Ziel (Fußgänger)
       if (target && selectedParking) {
         const route = await getCachedOrFetchRoute(
           selectedParking.lat,
           selectedParking.lng,
           target.lat,
           target.lng,
+          'foot',
         )
         if (isMounted) {
           setParkingToTargetRoute(route || [[selectedParking.lat, selectedParking.lng], [target.lat, target.lng]])

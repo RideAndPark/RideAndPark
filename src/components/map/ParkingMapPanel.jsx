@@ -1,4 +1,4 @@
-import { lazy, Suspense } from 'react'
+import { lazy, Suspense, useState } from 'react'
 import {
   Circle,
   CircleMarker,
@@ -86,7 +86,15 @@ export function ParkingMapPanel({
   userLocation,
   loading,
   mapTheme,
+  onMapThemeChange,
 }) {
+  const [showThemeDropdown, setShowThemeDropdown] = useState(false)
+
+  const handleThemeChange = (themeId) => {
+    onMapThemeChange(themeId)
+    setShowThemeDropdown(false)
+  }
+
   return (
     <section className="panel map-panel">
       <div className="map-frame">
@@ -99,6 +107,31 @@ export function ParkingMapPanel({
           userLocation={userLocation}
           mapTheme={mapTheme}
         />
+        
+        <div className="theme-switcher-map">
+          <button
+            className="theme-switcher-button"
+            onClick={() => setShowThemeDropdown(!showThemeDropdown)}
+            title="Kartenstil ändern"
+            aria-label="Kartenstil ändern"
+          >
+            ⚙
+          </button>
+
+          {showThemeDropdown && (
+            <div className="theme-dropdown">
+              {Object.entries(MAP_THEMES).map(([themeId, theme]) => (
+                <button
+                  key={themeId}
+                  className={`theme-option ${mapTheme === themeId ? 'is-selected' : ''}`}
+                  onClick={() => handleThemeChange(themeId)}
+                >
+                  {theme.name}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
       {loading ? <div className="map-overlay">Lade aktuelle Parkdaten...</div> : null}
     </section>
