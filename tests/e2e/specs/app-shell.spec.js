@@ -8,7 +8,7 @@ test.beforeEach(async ({ page }) => {
 test('renders the application shell with mocked parking data', async ({ page }) => {
   await page.goto('/')
 
-  await expect(page.getByRole('heading', { name: /Finde verfuegbare Parkplaetze/i })).toBeVisible()
+  await expect(page.getByRole('heading', { name: /Finde verfügbare Parkplätze/i })).toBeVisible()
   await expect(page.getByRole('heading', { name: 'Suche' })).toBeVisible()
   await expect(page.getByRole('heading', { name: 'Details' })).toBeVisible()
   await expect(page.getByRole('heading', { name: 'Trefferliste' })).toBeVisible()

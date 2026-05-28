@@ -8,7 +8,7 @@ test.beforeEach(async ({ page }) => {
 test('changes the map theme and persists it across reloads', async ({ page }) => {
   await page.goto('/')
 
-  await page.getByRole('button', { name: /Kartenstil aendern/i }).click()
+  await page.getByRole('button', { name: /Kartenstil ändern/i }).click()
   await page.getByRole('button', { name: 'Satellite' }).click()
 
   const storedTheme = await page.evaluate(() => window.localStorage.getItem('mapTheme'))
